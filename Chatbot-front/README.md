@@ -46,3 +46,19 @@ npm run build
 ```sh
 npm run lint
 ```
+
+## Chatbot Backend Configuration
+
+Create a local `.env` file based on `.env.example` and set:
+
+- `VITE_CHATBOT_API_URL`: Backend base URL (example: `http://localhost:3000`)
+- `VITE_CHATBOT_API_TOKEN`: Optional bearer token
+- `VITE_CHATBOT_TIMEOUT_MS`: Request timeout in milliseconds
+
+When `VITE_CHATBOT_API_URL` is not defined, the chatbot works in local mock mode.
+
+Expected backend endpoints:
+
+- `GET /chatbot/thread`
+- `GET /chatbot/recent-chats`
+- `POST /chatbot/messages` with body `{ "message": string, "threadId"?: string }`
