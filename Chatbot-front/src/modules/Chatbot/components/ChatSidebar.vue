@@ -1,43 +1,78 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import BaseAvatar from '../../../common/components/BaseAvatar.vue'
 import type { RecentChat } from '../entities/chat'
+import { useAuthStore } from '../../../stores/useAuthStore'
 
-const props = defineProps<{
+interface Props {
   recentChats: RecentChat[]
-}>()
+  section: 'conversa' | 'admin'
+  activeChatId?: string
+}
+
+const props = defineProps<Props>()
 
 const emit = defineEmits<{
   newChat: []
+  selectChat: [chatId: string]
 }>()
 
+const authStore = useAuthStore()
+
+const currentUserName = computed(() => authStore.currentUser?.fullName || 'Usuario')
+const currentUserEmail = computed(() => authStore.currentUser?.email || 'email@exemplo.com')
+
 const triggerNewChat = () => emit('newChat')
+const triggerSelectChat = (chatId: string) => emit('selectChat', chatId)
 </script>
 
 <template>
   <aside class="sidebar">
     <section class="sidebar__profile">
-      <BaseAvatar label="Heloisa" />
+      <BaseAvatar :label="currentUserName" />
       <div>
-        <p class="sidebar__name">Heloisa</p>
-        <p class="sidebar__email">heloisa@gmail.com</p>
+        <p class="sidebar__name">{{ currentUserName }}</p>
+        <p class="sidebar__email">{{ currentUserEmail }}</p>
       </div>
     </section>
 
-    <button class="sidebar__settings" type="button">
-      <span class="sidebar__icon">[ ]</span>
-      Configuracao
+    <button
+      v-if="props.section === 'conversa'"
+      class="sidebar__new-chat"
+      type="button"
+      @click="triggerNewChat"
+    >
+      + Novo Chat
     </button>
 
-    <button class="sidebar__new-chat" type="button" @click="triggerNewChat">+ Novo Chat</button>
-
-    <section class="sidebar__recent">
+    <section v-if="props.section === 'conversa'" class="sidebar__recent">
       <p class="sidebar__recent-title">Chats recentes</p>
       <ul class="sidebar__list">
-        <li v-for="chat in props.recentChats" :key="chat.id" class="sidebar__list-item">
-          <p class="sidebar__chat-title">{{ chat.title }}</p>
-          <p class="sidebar__chat-time">{{ chat.updatedLabel }}</p>
+        <li
+          v-for="chat in props.recentChats"
+          :key="chat.id"
+          class="sidebar__list-item"
+          :class="{ 'sidebar__list-item--active': chat.id === props.activeChatId }"
+        >
+          <button type="button" class="sidebar__chat-button" @click="triggerSelectChat(chat.id)">
+            <p class="sidebar__chat-title">{{ chat.title }}</p>
+            <p class="sidebar__chat-time">{{ chat.updatedLabel }}</p>
+          </button>
         </li>
       </ul>
+    </section>
+
+    <section v-if="props.section === 'admin'" class="sidebar__admin-nav">
+      <p class="sidebar__recent-title">Painel administrativo</p>
+      <RouterLink class="sidebar__admin-link" :to="{ name: 'admin-documentos' }">
+        Documentos
+      </RouterLink>
+      <RouterLink class="sidebar__admin-link" :to="{ name: 'admin-controle-acesso' }">
+        Controle de acesso
+      </RouterLink>
+      <RouterLink class="sidebar__admin-link" :to="{ name: 'admin-relatorios' }">
+        Relatórios
+      </RouterLink>
     </section>
   </aside>
 </template>
@@ -73,7 +108,6 @@ const triggerNewChat = () => emit('newChat')
   color: #6f7682;
 }
 
-.sidebar__settings,
 .sidebar__new-chat {
   border: 0;
   border-radius: 9px;
@@ -81,18 +115,6 @@ const triggerNewChat = () => emit('newChat')
   text-align: left;
   font-size: 0.98rem;
   cursor: pointer;
-}
-
-.sidebar__settings {
-  background: #ebebee;
-  color: #2d2f34;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.sidebar__icon {
-  font-size: 1rem;
 }
 
 .sidebar__new-chat {
@@ -108,6 +130,30 @@ const triggerNewChat = () => emit('newChat')
   padding-top: 0.85rem;
 }
 
+.sidebar__admin-nav {
+  border-top: 1px solid #d2d2d6;
+  margin-top: 0.35rem;
+  padding-top: 0.85rem;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.sidebar__admin-link {
+  text-decoration: none;
+  color: #2d3137;
+  border: 1px solid #d0d0d3;
+  background: #ededf0;
+  border-radius: 9px;
+  padding: 0.65rem 0.7rem;
+  font-weight: 600;
+}
+
+.sidebar__admin-link.router-link-exact-active {
+  background: #762f37;
+  color: #ffffff;
+  border-color: #762f37;
+}
+
 .sidebar__recent-title {
   color: #707581;
   font-size: 0.94rem;
@@ -121,9 +167,18 @@ const triggerNewChat = () => emit('newChat')
 }
 
 .sidebar__list-item {
-  padding: 0.7rem;
   border-radius: 8px;
   border: 1px solid transparent;
+}
+
+.sidebar__chat-button {
+  width: 100%;
+  padding: 0.7rem;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  border-radius: 8px;
 }
 
 .sidebar__list-item:first-child {
@@ -133,6 +188,16 @@ const triggerNewChat = () => emit('newChat')
 .sidebar__list-item:first-child .sidebar__chat-title,
 .sidebar__list-item:first-child .sidebar__chat-time {
   color: #ffffff;
+}
+
+.sidebar__list-item--active {
+  background: #e7dde0;
+  border-color: #762f37;
+}
+
+.sidebar__list-item--active .sidebar__chat-title,
+.sidebar__list-item--active .sidebar__chat-time {
+  color: #1f2328;
 }
 
 .sidebar__chat-title {

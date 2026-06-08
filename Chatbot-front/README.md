@@ -51,7 +51,7 @@ npm run lint
 
 Create a local `.env` file based on `.env.example` and set:
 
-- `VITE_CHATBOT_API_URL`: Backend base URL (example: `http://localhost:3000`)
+- `VITE_CHATBOT_API_URL`: Backend base URL (example: `http://localhost:8000/api`)
 - `VITE_CHATBOT_API_TOKEN`: Optional bearer token
 - `VITE_CHATBOT_TIMEOUT_MS`: Request timeout in milliseconds
 

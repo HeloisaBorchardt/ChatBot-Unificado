@@ -1,11 +1,19 @@
 <script setup lang="ts">
 import BaseAvatar from '../../../common/components/BaseAvatar.vue'
-import type { ChatMessage, ChatParticipant } from '../entities/chat'
+import type { ChatMessage, ChatMessageRating, ChatParticipant } from '../entities/chat'
 
-defineProps<{
+const props = defineProps<{
   message: ChatMessage
   assistant: ChatParticipant
 }>()
+
+const emit = defineEmits<{
+  rateMessage: [messageId: string, rating: ChatMessageRating]
+}>()
+
+const rate = (rating: ChatMessageRating) => {
+  emit('rateMessage', props.message.id, rating)
+}
 </script>
 
 <template>
@@ -15,8 +23,24 @@ defineProps<{
       <div class="message__bubble message__bubble--assistant">
         <p>{{ message.content }}</p>
         <div v-if="message.canRate" class="message__feedback">
-          <button type="button" aria-label="Gostei">Like</button>
-          <button type="button" aria-label="Nao gostei">Dislike</button>
+          <button
+            type="button"
+            aria-label="Gostei"
+            class="message__feedback-button"
+            :class="{ 'message__feedback-button--selected': message.rating === 'like' }"
+            @click="rate('like')"
+          >
+            Like
+          </button>
+          <button
+            type="button"
+            aria-label="Nao gostei"
+            class="message__feedback-button"
+            :class="{ 'message__feedback-button--selected': message.rating === 'dislike' }"
+            @click="rate('dislike')"
+          >
+            Dislike
+          </button>
         </div>
       </div>
     </template>
@@ -67,15 +91,26 @@ defineProps<{
   gap: 0.4rem;
 }
 
-.message__feedback button {
-  border: 0;
-  background: transparent;
+.message__feedback-button {
+  border: 1px solid #c9c9cd;
+  background: #ffffff;
   cursor: pointer;
-  opacity: 0.75;
+  color: #555c66;
+  border-radius: 999px;
+  padding: 0.25rem 0.7rem;
+  font-size: 0.8rem;
+  font-weight: 600;
 }
 
-.message__feedback button:hover {
-  opacity: 1;
+.message__feedback-button:hover {
+  border-color: #762f37;
+  color: #762f37;
+}
+
+.message__feedback-button--selected {
+  background: #762f37;
+  border-color: #762f37;
+  color: #ffffff;
 }
 
 @media (max-width: 960px) {
