@@ -36,7 +36,6 @@ const submit = () => emit('send')
     <button class="composer__send" :disabled="props.disabled" type="submit" aria-label="Enviar">
       >
     </button>
-    <button class="composer__attach" type="button" aria-label="Anexar arquivo">v</button>
   </form>
 </template>
 
@@ -45,7 +44,7 @@ const submit = () => emit('send')
   border-top: 1px solid #d0d0d3;
   background: #f4f4f6;
   display: grid;
-  grid-template-columns: 1fr auto auto;
+  grid-template-columns: 1fr auto;
   gap: 0.55rem;
   padding: 0.8rem 1rem;
 }
@@ -64,7 +63,7 @@ const submit = () => emit('send')
 }
 
 .composer__send,
-.composer__attach {
+.composer__send {
   border: 0;
   border-radius: 999px;
   width: 38px;
@@ -76,11 +75,6 @@ const submit = () => emit('send')
 .composer__send {
   background: #a9bbdf;
   color: #1f304d;
-}
-
-.composer__attach {
-  background: transparent;
-  border: 1px solid #c4c4c9;
 }
 
 .composer__send:disabled {

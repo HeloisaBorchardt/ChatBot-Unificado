@@ -1,6 +1,11 @@
 export type ChatMessageRole = 'assistant' | 'user'
 export type ChatMessageRating = 'like' | 'dislike'
 
+export interface ChatMessageSource {
+  nome: string
+  url: string | null
+}
+
 export interface ChatParticipant {
   id: string
   name: string
@@ -17,6 +22,7 @@ export interface ChatMessage {
   conversationId?: number
   canRate?: boolean
   rating?: ChatMessageRating | null
+  sources?: ChatMessageSource[]
 }
 
 export interface RecentChat {

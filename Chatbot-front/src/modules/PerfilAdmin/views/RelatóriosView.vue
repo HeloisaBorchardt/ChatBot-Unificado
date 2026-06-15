@@ -38,7 +38,6 @@ interface MetricasResponse {
   perguntas_respondidas: number
   perguntas_nao_respondidas: number
   taxa_sucesso: number
-  taxa_reformulacao: number
   tempo_medio_resposta: number
   avaliacoes_aprovadas: number
   avaliacoes_rejeitadas: number
@@ -66,7 +65,7 @@ interface ConversaApi {
     resposta?: {
       intencao?: string
       texto_resposta?: string
-      tempo_resposta?: string | null
+      tempo_resposta?: string | number | null
     } | null
   }>
 }
@@ -259,13 +258,46 @@ const calcularPercentual = (valor: number, total: number) => {
   return Number(((valor / total) * 100).toFixed(1))
 }
 
+const converterTempoParaSegundos = (valor?: string | number | null) => {
+  if (typeof valor === 'number') return valor
+  if (!valor) return 0
+
+  const texto = valor.trim()
+  if (!texto) return 0
+
+  if (/^\d+(?:\.\d+)?$/.test(texto)) {
+    return Number(texto)
+  }
+
+  const partes = texto.split(/\s+/)
+  const tempo = (partes.length > 1 ? partes[1] : partes[0]) ?? ''
+  const dias = partes.length > 1 ? Number(partes[0]) || 0 : 0
+  const componentes = tempo.split(':')
+
+  if (componentes.length < 2 || componentes.length > 3) return 0
+
+  const horas = Number(componentes[0]) || 0
+  const minutos = Number(componentes[1]) || 0
+  const segundos = Number.parseFloat(componentes[2] ?? '0') || 0
+
+  return dias * 86400 + horas * 3600 + minutos * 60 + segundos
+}
+
+const calcularTempoMedioResposta = (dados: InteracaoMock[]) => {
+  const interacoesComTempo = dados.filter((item) => item.tempoResposta > 0)
+  const base = interacoesComTempo.length ? interacoesComTempo : interacoesMock.filter((item) => item.tempoResposta > 0)
+
+  if (!base.length) return 0
+
+  const total = base.reduce((soma, item) => soma + item.tempoResposta, 0)
+  return Number((total / base.length).toFixed(1))
+}
+
 const metricas = computed<MetricasResponse>(() => {
   const dados = interacoesFiltradas.value
   const total = dados.length
   const respondidas = dados.filter((item) => item.status === 'sucesso').length
   const naoRespondidas = dados.filter((item) => item.status === 'falha').length
-  const comReformulacao = dados.filter((item) => item.reformulacoes > 0).length
-  const tempoTotal = dados.reduce((soma, item) => soma + item.tempoResposta, 0)
   const confiancaTotal = dados.reduce((soma, item) => soma + item.confianca, 0)
   const aprovadas = dados.filter((item) => item.avaliacao === 'aprovada').length
   const rejeitadas = dados.filter((item) => item.avaliacao === 'rejeitada').length
@@ -276,8 +308,7 @@ const metricas = computed<MetricasResponse>(() => {
     perguntas_respondidas: respondidas,
     perguntas_nao_respondidas: naoRespondidas,
     taxa_sucesso: calcularPercentual(respondidas, total),
-    taxa_reformulacao: calcularPercentual(comReformulacao, total),
-    tempo_medio_resposta: total ? Number((tempoTotal / total).toFixed(1)) : 0,
+    tempo_medio_resposta: calcularTempoMedioResposta(dados),
     avaliacoes_aprovadas: aprovadas,
     avaliacoes_rejeitadas: rejeitadas,
     avaliacoes_pendentes: pendentes,
@@ -319,14 +350,28 @@ const mapearAvaliacao = (avaliacao?: boolean | null): AvaliacaoManual => {
   return 'pendente'
 }
 
+const respostaIndicaFalha = (resposta: string) => {
+  const texto = resposta.trim().toLowerCase()
+
+  if (!texto) return true
+
+  return [
+    'não encontrei',
+    'nÃ£o encontrei',
+    'nao encontrei',
+    'erro ao gerar resposta',
+    'erro ao conectar com o servidor',
+    'sem resposta do servidor',
+  ].some((indicador) => texto.includes(indicador))
+}
+
 const mapearConversasParaInteracoes = (conversas: ConversaApi[]): InteracaoMock[] => {
   return conversas.flatMap((conversa) => {
     const perguntas = conversa.perguntas?.length ? conversa.perguntas : []
 
     return perguntas.map((pergunta) => {
       const respostaTexto = pergunta.resposta?.texto_resposta?.trim() ?? ''
-      const status: StatusResposta =
-        respostaTexto && !respostaTexto.toLowerCase().includes('não encontrei') ? 'sucesso' : 'falha'
+      const status: StatusResposta = respostaIndicaFalha(respostaTexto) ? 'falha' : 'sucesso'
 
       return {
         id: pergunta.id_pergunta,
@@ -336,7 +381,7 @@ const mapearConversasParaInteracoes = (conversas: ConversaApi[]): InteracaoMock[
         status,
         reformulacoes: 0,
         avaliacao: mapearAvaliacao(conversa.avaliacao),
-        tempoResposta: 0,
+        tempoResposta: converterTempoParaSegundos(pergunta.resposta?.tempo_resposta),
         data: montarDataConversa(conversa),
         categoria: pergunta.resposta?.intencao ?? 'GERAL',
         origem: 'API /conversas/',
@@ -483,7 +528,6 @@ Desempenho:
 - Perguntas respondidas com sucesso: ${metricas.value.perguntas_respondidas}
 - Perguntas nao respondidas: ${metricas.value.perguntas_nao_respondidas}
 - Taxa de sucesso: ${metricas.value.taxa_sucesso}%
-- Taxa de reformulacao: ${metricas.value.taxa_reformulacao}%
 - Tempo medio de resposta: ${metricas.value.tempo_medio_resposta}s
 - Confianca media: ${metricas.value.confianca_media}%
 
@@ -597,12 +641,6 @@ watch([metricas, filtroUsuario, filtroPeriodo], () => {
             <div class="metric-card__icon">OK</div>
             <p class="metric-card__value">{{ metricas.taxa_sucesso }}%</p>
             <p class="metric-card__label">Respondidas com sucesso</p>
-          </article>
-
-          <article class="metric-card">
-            <div class="metric-card__icon">RF</div>
-            <p class="metric-card__value">{{ metricas.taxa_reformulacao }}%</p>
-            <p class="metric-card__label">Taxa de reformulação</p>
           </article>
 
           <article class="metric-card">

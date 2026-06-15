@@ -3,6 +3,11 @@ import { httpClient } from '../../../../api/client'
 import { apiRoutes } from '../../../../api/routes'
 import { useAuthStore } from '../../../../stores/useAuthStore'
 
+interface ChatMessageSourceApi {
+  nome: string
+  url?: string | null
+}
+
 interface ConversationQuestionApi {
   id_pergunta: number
   texto?: string
@@ -25,6 +30,17 @@ interface ConversationApi {
   horario_conversa?: string
   avaliacao?: boolean | null
   perguntas?: ConversationQuestionApi[]
+}
+
+interface SendQuestionApiResponse {
+  id_pergunta?: number
+  chat_id?: number
+  pergunta?: string
+  resposta?: string
+  message?: string
+  mensagem?: string
+  conversa_id?: number
+  fontes?: ChatMessageSourceApi[]
 }
 
 const createEmptyThread = (): ChatThread => ({
@@ -97,6 +113,7 @@ const mapConversationToThread = (conversation: ConversationApi): ChatThread => {
         conversationId: conversation.id_conversa,
         canRate: true,
         rating: null,
+        sources: [],
       })
     }
   }
@@ -144,7 +161,7 @@ export class ChatbotService {
       const usuarioEmail = authStore.currentUser?.email
       const chatId = Number(threadId)
 
-      const { data } = await httpClient.post(apiRoutes.perguntas.create, {
+      const { data } = await httpClient.post<SendQuestionApiResponse>(apiRoutes.perguntas.create, {
         texto: question,
         ...(Number.isFinite(chatId) ? { chat_id: chatId } : {}),
         ...(usuarioEmail ? { usuario_email: usuarioEmail } : {}),
@@ -156,6 +173,14 @@ export class ChatbotService {
         content: data.resposta || data.mensagem || data.message || 'Sem resposta do servidor',
         createdAt: new Date().toISOString(),
         conversationId: data.conversa_id ?? data.chat_id,
+        sources: Array.isArray(data.fontes)
+          ? data.fontes
+              .filter((fonte) => fonte.nome.trim())
+              .map((fonte) => ({
+                nome: fonte.nome,
+                url: fonte.url ?? null,
+              }))
+          : [],
       }
     } catch (error) {
       console.error('Erro ao enviar mensagem:', error)
@@ -164,6 +189,7 @@ export class ChatbotService {
         role: 'assistant',
         content: 'Erro ao conectar com o servidor',
         createdAt: new Date().toISOString(),
+        sources: [],
       }
     }
   }

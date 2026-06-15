@@ -19,6 +19,7 @@ const normalizeAssistantMessage = (message: ChatMessage): ChatMessage => {
     ...message,
     canRate: message.canRate ?? true,
     rating: message.rating ?? null,
+    sources: message.sources ?? [],
   }
 }
 
