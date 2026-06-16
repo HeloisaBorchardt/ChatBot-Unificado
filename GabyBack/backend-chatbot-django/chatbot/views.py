@@ -84,6 +84,30 @@ class DocumentoViewSet(viewsets.ModelViewSet):
         # reprocessa se trocar arquivo
         if "arquivo" in self.request.FILES:
             processar_documento(documento)
+
+
+def montar_fonte_principal_documento(request, nomes_fontes):
+    for nome in nomes_fontes:
+        nome_normalizado = (nome or "").strip()
+        if not nome_normalizado:
+            continue
+
+        documento = Documento.objects.filter(
+            nome__iexact=nome_normalizado
+        ).order_by('-id_documento').first()
+
+        if documento and documento.arquivo:
+            return [{
+                "nome": documento.nome or f"Documento {documento.id_documento}",
+                "url": request.build_absolute_uri(documento.arquivo.url),
+            }]
+
+        return [{
+            "nome": nome_normalizado,
+            "url": None,
+        }]
+
+    return []
             
 
 class UsuarioViewSet(viewsets.ModelViewSet):
@@ -305,7 +329,7 @@ class PerguntaViewSet(viewsets.ModelViewSet):
             ])
 
             # captura PDFs usados
-            fontes = list(set([
+            fontes = list(dict.fromkeys([
                 chunk["documento"]
                 for chunk in context_chunks
             ]))
@@ -538,7 +562,10 @@ class PerguntaViewSet(viewsets.ModelViewSet):
                     pergunta.descricao_pergunta,
 
                 "resposta":
-                    resposta.texto_resposta
+                    resposta.texto_resposta,
+
+                "fontes":
+                    montar_fonte_principal_documento(request, fontes),
             },
             status=status.HTTP_201_CREATED
         )

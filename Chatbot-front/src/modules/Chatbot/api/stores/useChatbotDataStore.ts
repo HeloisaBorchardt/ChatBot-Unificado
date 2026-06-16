@@ -42,13 +42,6 @@ export const useChatbotDataStore = defineStore('chatbot-data', {
       try {
         const recentChats = await chatbotService.getRecentChats()
         this.recentChats = recentChats
-
-        const firstRecentChat = recentChats.at(0)
-        if (firstRecentChat) {
-          await this.openConversation(firstRecentChat.id)
-          return
-        }
-
         this.thread = await chatbotService.getInitialThread()
       } finally {
         this.isLoading = false

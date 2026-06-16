@@ -168,7 +168,8 @@ const triggerSelectChat = (chatId: string) => emit('selectChat', chatId)
 
 .sidebar__list-item {
   border-radius: 8px;
-  border: 1px solid transparent;
+  border: 1px solid #d0d0d3;
+  background: #ffffff;
 }
 
 .sidebar__chat-button {
@@ -181,23 +182,14 @@ const triggerSelectChat = (chatId: string) => emit('selectChat', chatId)
   border-radius: 8px;
 }
 
-.sidebar__list-item:first-child {
-  background: #762f37;
-}
-
-.sidebar__list-item:first-child .sidebar__chat-title,
-.sidebar__list-item:first-child .sidebar__chat-time {
-  color: #ffffff;
-}
-
 .sidebar__list-item--active {
-  background: #e7dde0;
+  background: #762f37;
   border-color: #762f37;
 }
 
 .sidebar__list-item--active .sidebar__chat-title,
 .sidebar__list-item--active .sidebar__chat-time {
-  color: #1f2328;
+  color: #ffffff;
 }
 
 .sidebar__chat-title {

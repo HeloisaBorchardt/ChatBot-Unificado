@@ -321,13 +321,13 @@ const metricas = computed<MetricasResponse>(() => {
       { label: 'Duas ou mais', valor: dados.filter((item) => item.reformulacoes >= 2).length },
     ],
     avaliacoes_dados: [
-      { label: 'Aprovadas', quantidade: aprovadas },
+      { label: 'Positivas', quantidade: aprovadas },
       { label: 'Rejeitadas', quantidade: rejeitadas },
       { label: 'Pendentes', quantidade: pendentes },
     ],
     desempenho_dados: [
       { label: 'Respondidas', quantidade: respondidas },
-      { label: 'Nao respondidas', quantidade: naoRespondidas },
+      { label: 'Com falha', quantidade: naoRespondidas },
       { label: 'Ambiguas', quantidade: dados.filter((item) => item.status === 'ambigua').length },
     ],
   }
@@ -526,13 +526,13 @@ Metricas de uso:
 
 Desempenho:
 - Perguntas respondidas com sucesso: ${metricas.value.perguntas_respondidas}
-- Perguntas nao respondidas: ${metricas.value.perguntas_nao_respondidas}
+- Respostas com falha: ${metricas.value.perguntas_nao_respondidas}
 - Taxa de sucesso: ${metricas.value.taxa_sucesso}%
 - Tempo medio de resposta: ${metricas.value.tempo_medio_resposta}s
 - Confianca media: ${metricas.value.confianca_media}%
 
 Avaliacao manual:
-- Aprovadas: ${metricas.value.avaliacoes_aprovadas}
+- Positivas: ${metricas.value.avaliacoes_aprovadas}
 - Rejeitadas: ${metricas.value.avaliacoes_rejeitadas}
 - Pendentes: ${metricas.value.avaliacoes_pendentes}
 
@@ -652,7 +652,7 @@ watch([metricas, filtroUsuario, filtroPeriodo], () => {
           <article class="metric-card">
             <div class="metric-card__icon">AV</div>
             <p class="metric-card__value">{{ metricas.avaliacoes_aprovadas }}</p>
-            <p class="metric-card__label">Avaliações aprovadas</p>
+            <p class="metric-card__label">Avaliações positivas</p>
           </article>
 
           <article class="metric-card">
@@ -670,7 +670,7 @@ watch([metricas, filtroUsuario, filtroPeriodo], () => {
           <article class="metric-card">
             <div class="metric-card__icon">ER</div>
             <p class="metric-card__value">{{ metricas.perguntas_nao_respondidas }}</p>
-            <p class="metric-card__label">Não respondidas</p>
+            <p class="metric-card__label">Respostas com falha</p>
           </article>
         </section>
 
@@ -724,7 +724,7 @@ watch([metricas, filtroUsuario, filtroPeriodo], () => {
             <h2 class="chart-card__title">Resumo de qualidade</h2>
             <dl class="quality-list">
               <div>
-                <dt>Respostas aprovadas</dt>
+                <dt>Avaliações positivas</dt>
                 <dd>{{ metricas.avaliacoes_aprovadas }}</dd>
               </div>
               <div>
