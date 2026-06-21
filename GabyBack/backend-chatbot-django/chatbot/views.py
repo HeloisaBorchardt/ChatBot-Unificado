@@ -1,62 +1,43 @@
-import os
-import spacy
-from chatbot.services.vetorizacao import buscar_chunks_rag
+from chatbot.services.vetorizacao import buscar_chunks_rag, processar_documento
 from chatbot.services.gemini_service import chamar_api_chat
-from chatbot.services.vetorizacao import processar_documento
-
 from nlp.nlp import analisar_texto
 from nlp.identificacao import identificar_intencao
-from nlp.base_conhecimento import base_manager
-from nlp.busca import formatar_resposta
-
-
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
-
-CAMINHO_BASE = os.path.join(
-    BASE_DIR,
-    "../nlp/dados/edital.txt"
-)
-
-
-from rest_framework import viewsets
-from rest_framework.parsers import MultiPartParser, FormParser
-from .models import Documento
-from .serializers import DocumentoSerializer
-
-from rest_framework.decorators import action
-from rest_framework.response import Response
-from rest_framework import status
-from drf_yasg.utils import swagger_auto_schema
-
-
 from rest_framework import viewsets, status
+from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.decorators import action
 from rest_framework.response import Response
-
 from django.utils import timezone
-
-from .models import Usuario
-from .serializers import UsuarioSerializer
-
-from .serializers import PerguntarSerializer
-
-from .models import Pergunta, Conversa, Resposta
+from .models import Documento, Usuario, Pergunta, Conversa, Resposta
 from .serializers import (
+    DocumentoSerializer,
+    UsuarioSerializer,
+    PerguntarSerializer,
     PerguntaSerializer,
     ConversaSerializer,
-    RespostaSerializer
+    RespostaSerializer,
 )
 
 
-
-from django.utils import timezone
-
-
-from django.utils import timezone
-
-
-from django.utils import timezone
+def deve_usar_historico(texto):
+    texto_lower = texto.lower()
+    termos = [
+        "anterior",
+        "anteriormente",
+        "antes",
+        "última pergunta",
+        "ultima pergunta",
+        "o que foi",
+        "sobre o que falamos",
+        "lembrar",
+        "continuar",
+        "continuação",
+        "continuacao",
+        "conversa anterior",
+        "histórico",
+        "historico",
+        "falamos antes",
+    ]
+    return any(termo in texto_lower for termo in termos)
 
 
 class DocumentoViewSet(viewsets.ModelViewSet):
@@ -84,8 +65,7 @@ class DocumentoViewSet(viewsets.ModelViewSet):
         # reprocessa se trocar arquivo
         if "arquivo" in self.request.FILES:
             processar_documento(documento)
-
-
+            
 def montar_fonte_principal_documento(request, nomes_fontes):
     for nome in nomes_fontes:
         nome_normalizado = (nome or "").strip()
@@ -108,7 +88,6 @@ def montar_fonte_principal_documento(request, nomes_fontes):
         }]
 
     return []
-            
 
 class UsuarioViewSet(viewsets.ModelViewSet):
     queryset = Usuario.objects.all()
@@ -342,7 +321,7 @@ class PerguntaViewSet(viewsets.ModelViewSet):
 
             historico_prompt = ""
 
-            if contexto_historico:
+            if contexto_historico and deve_usar_historico(texto):
                 historico_prompt = (
                     "INCLUA O HISTÓRICO DA CONVERSA ANTERIOR:\n"
                     f"{contexto_historico}\n\n"
@@ -418,7 +397,7 @@ class PerguntaViewSet(viewsets.ModelViewSet):
 
         else:
 
-            if contexto_historico:
+            if contexto_historico and deve_usar_historico(texto):
 
                 print(
                     "📚 Sem chunks relevantes, mas há histórico da conversa. "
@@ -483,12 +462,6 @@ class PerguntaViewSet(viewsets.ModelViewSet):
                     f"'{texto}'"
                 )
 
-                if not base_manager.carregado:
-
-                    base_manager.carregar(
-                        CAMINHO_BASE
-                    )
-
                 resultado_nlp = analisar_texto(
                     texto
                 )
@@ -497,31 +470,10 @@ class PerguntaViewSet(viewsets.ModelViewSet):
                     texto
                 )
 
-                busca = base_manager.buscar(
-                    resultado_nlp["doc"]
-                )
-
                 resposta_texto = (
-                    formatar_resposta(
-                        busca
-                    )
+                    "Não entendi a pergunta. "
+                    "Por favor, reformule."
                 )
-
-                if (
-                    not resposta_texto
-                    or
-                    len(
-                        resposta_texto.strip()
-                    ) < 30
-                ):
-
-                    resposta_texto = (
-                        "Não encontrei "
-                        "informações sobre isso "
-                        "nos documentos disponíveis. "
-                        "Tente reformular "
-                        "a pergunta."
-                    )
 
                 intencao_saida = (
                     intencao.get(
