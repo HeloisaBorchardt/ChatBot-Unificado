@@ -138,7 +138,11 @@ class BaseConhecimentoManager:
                 break
 
         if not intencao_detectada:
-            return {"encontrou": False, "resposta": "Não entendi a intenção da pergunta.", "confianca": 0}
+            return {
+                "encontrou": False,
+                "resposta": "Não entendi a pergunta. Por favor, reformule.",
+                "confianca": 0
+            }
 
         # 4. Busca a melhor frase
         termos_categoria = palavras_chave[intencao_detectada]
@@ -172,7 +176,7 @@ class BaseConhecimentoManager:
 
         return {
             "encontrou": False,
-            "resposta": "Não encontrei essa informação específica.",
+            "resposta": "Não entendi a pergunta. Por favor, reformule.",
             "confianca": 0
         }
 
