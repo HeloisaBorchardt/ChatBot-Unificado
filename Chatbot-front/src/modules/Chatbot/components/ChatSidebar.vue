@@ -80,12 +80,14 @@ const triggerSelectChat = (chatId: string) => emit('selectChat', chatId)
 <style scoped>
 .sidebar {
   width: 280px;
+  min-height: 0;
   border-right: 1px solid #d0d0d3;
   background: #f2f2f4;
   display: flex;
   flex-direction: column;
   padding: 1rem;
   gap: 0.9rem;
+  overflow: hidden;
 }
 
 .sidebar__profile {
@@ -128,6 +130,10 @@ const triggerSelectChat = (chatId: string) => emit('selectChat', chatId)
   border-top: 1px solid #d2d2d6;
   margin-top: 0.35rem;
   padding-top: 0.85rem;
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
 }
 
 .sidebar__admin-nav {
@@ -164,6 +170,10 @@ const triggerSelectChat = (chatId: string) => emit('selectChat', chatId)
   list-style: none;
   display: grid;
   gap: 0.55rem;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+  overscroll-behavior: contain;
 }
 
 .sidebar__list-item {
@@ -206,6 +216,7 @@ const triggerSelectChat = (chatId: string) => emit('selectChat', chatId)
 @media (max-width: 960px) {
   .sidebar {
     width: 100%;
+    max-height: 42dvh;
     border-right: 0;
     border-bottom: 1px solid #d0d0d3;
   }
